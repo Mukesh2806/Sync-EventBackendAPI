@@ -182,8 +182,8 @@ def send_csv_email(admin_email: str, csv_string: str):
 
     msg = EmailMessage()
     msg['Subject'] = 'Sync API: Your Attendee Report'
-    msg['From'] = SENDER_EMAIL
-    msg['To'] = admin_email
+    msg['From'] = admin_email
+    msg['To'] = SENDER_EMAIL
     msg.set_content('Hello Admin,\n\nPlease find the latest Sync API attendee report attached to this email.')
     msg.add_attachment(
         csv_string.encode('utf-8'), 
