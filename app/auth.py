@@ -3,7 +3,7 @@ from passlib.context import CryptContext
 from jose import jwt
 
 # Security Settings
-SECRET_KEY = "super-secret-sync-api-key-change-this-in-production"
+SECRET_KEY = "abcddefenenanl"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
