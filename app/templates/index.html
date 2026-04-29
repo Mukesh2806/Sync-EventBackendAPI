@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sync | Welcome</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 { text-align: center; color: #333; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; margin-bottom: 5px; color: #666; font-size: 14px;}
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            box-sizing: border-box;
+        }
+        button {
+            width: 100%;
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+        button:hover { background-color: #0056b3; }
+        .toggle-btn {
+            background-color: transparent;
+            color: #007bff;
+            border: 1px solid #007bff;
+        }
+        .toggle-btn:hover { background-color: #f0f8ff; color: #0056b3; }
+        #message { text-align: center; margin-top: 15px; font-weight: bold; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2 id="form-title">Log In to Sync</h2>
+    
+    <div class="form-group">
+        <label for="email">Email Address</label>
+        <input type="email" id="email" placeholder="you@example.com" required>
+    </div>
+    
+    <div class="form-group">
+        <label for="password">Password</label>
+        <input type="password" id="password" placeholder="••••••••" required>
+    </div>
+
+    <button id="main-btn" onclick="handleLogin()">Log In</button>
+    <button class="toggle-btn" id="toggle-btn" onclick="toggleMode()">Need an account? Sign Up</button>
+
+    <div id="message"></div>
+</div>
+
+<script>
+    // Variables to track state
+    let isLoginMode = true;
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const messageDiv = document.getElementById('message');
+
+    // Switches the form between Login and Signup
+    function toggleMode() {
+        isLoginMode = !isLoginMode;
+        document.getElementById('form-title').innerText = isLoginMode ? "Log In to Sync" : "Create a Sync Account";
+        document.getElementById('main-btn').innerText = isLoginMode ? "Log In" : "Sign Up";
+        document.getElementById('main-btn').onclick = isLoginMode ? handleLogin : handleSignup;
+        document.getElementById('toggle-btn').innerText = isLoginMode ? "Need an account? Sign Up" : "Already have an account? Log In";
+        messageDiv.innerText = "";
+    }
+
+    // Handles Registration
+    async function handleSignup() {
+        messageDiv.innerText = "Registering...";
+        messageDiv.className = "";
+        
+        const response = await fetch('/signup', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                email: emailInput.value,
+                password: passwordInput.value
+            })
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            messageDiv.innerText = "Success! You can now log in.";
+            messageDiv.className = "success";
+            setTimeout(toggleMode, 1500); // Switch to login screen after 1.5s
+        } else {
+            messageDiv.innerText = data.detail || "Error signing up.";
+            messageDiv.className = "error";
+        }
+    }
+
+    // Handles Login & Token Storage
+    async function handleLogin() {
+        messageDiv.innerText = "Authenticating...";
+        messageDiv.className = "";
+
+        // FastAPI's OAuth2 expects Form Data for logins, not JSON!
+        const formData = new URLSearchParams();
+        formData.append('username', emailInput.value);
+        formData.append('password', passwordInput.value);
+
+        const response = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (response.ok) {
+            // 1. SAVE THE VIP WRISTBAND TO THE BROWSER
+            localStorage.setItem('token', data.access_token);
+            
+            // 2. CHECK WHO JUST LOGGED IN
+            checkUserRoleAndRedirect(data.access_token);
+        } else {
+            messageDiv.innerText = data.detail || "Incorrect email or password.";
+            messageDiv.className = "error";
+        }
+    }
+
+    // Decides which page to send the user to
+    async function checkUserRoleAndRedirect(token) {
+        const userResponse = await fetch('/users/me', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        
+        const userData = await userResponse.json();
+
+        if (userData.role === "admin") {
+            window.location.href = "/admin-panel";
+        } else {
+            window.location.href = "/dashboard";
+        }
+    }
+</script>
+
+</body>
+</html>

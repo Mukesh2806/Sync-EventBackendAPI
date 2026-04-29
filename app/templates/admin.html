@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sync | Admin Dashboard</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 12px; text-align: left; }
+        th { background-color: #09ebba; color: white; }
+        .btn-export { background: #17a2b8; color: white; padding: 10px 20px; border: none; cursor: pointer; border-radius: 5px; }
+        .logout { color: red; cursor: pointer; text-decoration: underline; }
+    </style>
+</head>
+<body>
+
+    <h1>Admin Control Panel</h1>
+    <p onclick="logout()" class="logout">Logout</p>
+    
+    <button class="btn-export" onclick="exportData()">Export CSV & Email Report</button>
+
+   <div id="admin-content">
+    <label for="statusFilter"><strong>Filter by Door Check-In:</strong></label>
+    <select id="statusFilter" onchange="filterTable()">
+        <option value="All">All Attendees</option>
+        <option value="✅ Checked-In">Checked-In</option>
+        <option value="❌ Pending">Pending</option>
+    </select>
+    
+    <table>
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Email</th>
+                <th>Team</th>
+                <th>Team Approval</th> <th>Door Check-In</th> </tr>
+        </thead>
+        <tbody id="user-table-body">
+            </tbody>
+    </table>
+</div>
+    <div style="background: #e9ecef; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
+    <h3>Admin Tools</h3>
+    <input type="text" id="announcement-input" placeholder="Post a live announcement...">
+    <button onclick="postAnnouncement()">Broadcast</button>
+    
+    <hr>
+    
+    <input type="number" id="scan-input" placeholder="Enter ID from QR Code">
+    <button onclick="checkInUser()">Check-In Attendee</button>
+</div>
+
+    <script>
+        const token = localStorage.getItem('token');
+
+       async function fetchUsers() {
+    const response = await fetch('/admin/users', {
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (response.ok) {
+        const users = await response.json();
+        const tbody = document.getElementById('user-table-body');
+        
+       tbody.innerHTML = users.map(user => `
+    <tr class="user-row">
+        <td>${user.id}</td>
+        <td>${user.email}</td>
+        <td>${user.team_code || 'No Team'}</td>
+        
+        <td>
+            <strong id="team-status-${user.id}">${user.status}</strong><br>
+            ${user.status !== 'Approved' ? `<button onclick="approveUser(${user.id})">Approve Team</button>` : ''}
+        </td>
+        
+        <td class="status-cell">
+            <button class="status-btn" id="checkin-btn-${user.id}" onclick="toggleCheckIn(${user.id})">
+                ${user.is_checked_in ? "✅ Checked-In" : "❌ Pending"}
+            </button>
+        </td>
+    </tr>
+`).join('');
+    } else {
+        alert("Access Denied. Admins Only.");
+        window.location.href = "/";
+    }
+}
+       async function approveUser(id) {
+    // This ONLY updates user.status for the team
+    const response = await fetch(`/admin/users/${id}/status?new_status=Approved`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (response.ok) {
+        fetchUsers(); 
+    } else {
+        alert("Failed to approve team.");
+    }
+}
+
+        async function exportData() {
+            const response = await fetch('/admin/export', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (response.ok) {
+                alert("Report generated! Check your email and your downloads folder.");
+                window.location.reload();
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            window.location.href = "/";
+        }
+
+        fetchUsers();
+
+        async function postAnnouncement() {
+        const text = document.getElementById('announcement-input').value;
+        await fetch(`/admin/announcements?content=${text}`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        alert("Broadcast sent!");
+    }
+
+    async function checkInUser() {
+    const id = document.getElementById('scan-input').value;
+    
+    if (!id) {
+        alert("Please enter an ID first!");
+        return;
+    }
+
+    // 1. Send it to the toggle-checkin route using POST
+    const response = await fetch(`/admin/users/${id}/toggle-checkin`, {
+        method: 'POST', 
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (response.ok) {
+        alert("User Checked In at the door!");
+        document.getElementById('scan-input').value = '';
+        fetchUsers();
+    } else {
+        alert("Failed to check in. Is the ID correct?");
+    }
+}
+
+   async function toggleStatus(userId) {
+    const btn = document.getElementById(`status-btn-${userId}`);
+    const currentStatus = btn.innerText.trim();
+    
+    // Figure out the opposite status
+    const newStatus = currentStatus === "Checked-In" ? "Pending" : "Checked-In";
+    
+    btn.innerText = "Updating..."; // Quick visual feedback
+
+    // Hit your EXISTING secure backend route
+    const response = await fetch(`/admin/users/${userId}/status?new_status=${newStatus}`, { 
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` } // <-- Added your security token!
+    });
+
+    if (response.ok) {
+        // Update button with the new status instantly
+        btn.innerText = newStatus; 
+        
+        // Update the cell's class so the filter works perfectly
+        btn.closest('td').className = `status-cell ${newStatus}`;
+    } else {
+        alert("Failed to update status. Make sure your token is valid!");
+        btn.innerText = currentStatus; // Revert text if it fails
+    }
+}
+
+async function toggleCheckIn(userId) {
+    const btn = document.getElementById(`checkin-btn-${userId}`);
+    btn.innerText = "Updating...";
+
+    // This ONLY hits your new toggle endpoint for attendance
+    const response = await fetch(`/admin/users/${userId}/toggle-checkin`, { 
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (response.ok) {
+        const data = await response.json();
+        // Change text based on the True/False response
+        btn.innerText = data.is_checked_in ? "✅ Checked-In" : "❌ Pending";
+    } else {
+        alert("Failed to update check-in.");
+        fetchUsers(); // Revert back if failed
+    }
+}
+function filterTable() {
+    const filterValue = document.getElementById("statusFilter").value;
+    const rows = document.querySelectorAll(".user-row"); 
+    rows.forEach(row => {
+        const checkInCell = row.querySelector(".status-cell");
+        if (!checkInCell) return;
+        const statusText = checkInCell.innerText.trim(); 
+        if (filterValue === "All" || statusText === filterValue) {
+            row.style.display = ""; // Show the row
+        } else {
+            row.style.display = "none"; // Hide the row
+        }
+    });
+}
+async function resolveTeam(userId, action) {
+    const response = await fetch(`/admin/users/${userId}/resolve-team?action=${action}`, {
+        method: 'PUT',
+        headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (response.ok) {
+        fetchUsers(); // Instantly refresh the table to show the result
+    } else {
+        alert("Failed to resolve team change.");
+    }
+}
+    </script>
+</body>
+</html>
