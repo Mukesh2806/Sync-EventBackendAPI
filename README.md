@@ -7,6 +7,7 @@ A robust, production-ready backend application built with **FastAPI** for managi
 * **Secure Authentication:** Complete User Signup and Login flows utilizing OAuth2 with JWT (JSON Web Tokens) and bcrypt password hashing.
 * **Role-Based Access Control (RBAC):** Tiered authorization supporting distinct user roles (e.g., standard users and a Master Admin) to secure protected routes.
 * **Automated Email & Reporting:** Dynamically generates CSV reports of event data and emails them to designated admin email securely using SMTP and Google App Passwords.
+* **Broadcasting:** The admin sends broadcast messages to all the users.
 * **Event Management:** Endpoints to handle user statuses, including a dynamic "Toggle Check-in" system.
 * **Interactive Documentation:** Auto-generated, interactive API documentation using Swagger UI.
 * **Robust Testing:** Integrated unit testing suite built with `pytest` and `httpx` to ensure API reliability.
