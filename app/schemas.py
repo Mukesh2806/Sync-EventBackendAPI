@@ -6,7 +6,7 @@ class UserCreate(BaseModel):
     email: str
     password: str
 
-# What we safely send back to the frontend (Notice: NO password here!)
+# What we safely send back to the frontend
 class UserResponse(BaseModel):
     id: int
     email: str

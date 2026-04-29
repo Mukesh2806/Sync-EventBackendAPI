@@ -14,6 +14,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi import Request
 from fastapi.responses import FileResponse
 import qrcode
+from dotenv import load_dotenv
 import base64
 from io import BytesIO
 import os
@@ -68,10 +69,11 @@ def create_user(user: schemas.UserCreate, db: Session = Depends(get_db)):
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
+    load_dotenv()
     MASTER_ADMIN_EMAIL = os.getenv("MASTER_ADMIN_EMAIL")
     hashed_password = auth.get_password_hash(user.password)
     assigned_role = "admin" if user.email == MASTER_ADMIN_EMAIL else "user"
-    
+    #used a dummy admin... email:admin123@gmail.com password:hello123
     new_user = models.User(
         email=user.email, 
         hashed_password=hashed_password, 
@@ -174,6 +176,7 @@ def export_users_csv(
     
 # --- HELPER FUNCTION: SEND EMAIL ---
 def send_csv_email(admin_email: str, csv_string: str):
+    load_dotenv()
     SENDER_EMAIL = os.getenv("SENDER_EMAIL")
     SENDER_PASSWORD = os.getenv("SENDER_PASSWORD")
 
