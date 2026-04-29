@@ -29,24 +29,32 @@ Follow these steps to run the project locally on your machine.
 ```bash
 git clone [https://github.com/Mukesh2806/Sync-EventBackendAPI.git](https://github.com/Mukesh2806/Sync-EventBackendAPI.git)
 cd Sync-EventBackendAPI
+```
 2. Create and activate a virtual environment:
 
 Bash
+```
 # Windows
 python -m venv venv
 venv\Scripts\activate
-
+```
+```
 # macOS/Linux
 python3 -m venv venv
 source venv/bin/activate
+```
 3. Install dependencies:
 
 Bash
+```
 pip install -r requirements.txt
+```
+
 4. Set up Environment Variables:
 Create a .env file in the root directory of the project and add the following variables:
 
 Code snippet
+```
 SECRET_KEY=your_super_secret_key_here
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=1440
@@ -54,10 +62,14 @@ SENDER_EMAIL=your_email@gmail.com
 SENDER_PASSWORD=your_16_char_google_app_password
 RECEIVER_EMAIL=recipient_email@example.com
 MASTER_ADMIN_EMAIL=master@example.com
+```
+
 5. Run the server:
 
 Bash
+```
 uvicorn app.main:app --reload
+```
 📖 API Documentation
 FastAPI automatically generates interactive documentation. Once the server is running, you can test all endpoints directly from your browser:
 
@@ -73,7 +85,9 @@ Render live site: https://sync-eventbackendapi.onrender.com/
 This project includes a suite of unit tests to verify authentication and endpoint health. To run the tests, simply execute:
 
 Bash
+```
 pytest
+```
 Acknowledgments & AI Leverage
 Building software today is about combining problem-solving with the right tools. While the core architecture, database modeling, API design, and system logic were driven by my own understanding of backend engineering, I proudly utilized AI assistants (like ChatGPT/Gemini) to accelerate development and overcome roadblocks in the following specific areas:
 
