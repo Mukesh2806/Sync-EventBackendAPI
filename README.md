@@ -88,7 +88,8 @@ Bash
 ```
 pytest
 ```
-Acknowledgments & AI Leverage
+##Acknowledgments & AI Leverage
+
 Building software today is about combining problem-solving with the right tools. While the core architecture, database modeling, API design, and system logic were driven by my own understanding of backend engineering, I proudly utilized AI assistants (like ChatGPT/Gemini) to accelerate development and overcome roadblocks in the following specific areas:
 
 Frontend Prototyping: Writing the foundational HTML syntax and specific JavaScript logic, particularly the fetch functions for API integration and the UI logic for the check-in toggle.
